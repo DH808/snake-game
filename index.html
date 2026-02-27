@@ -5,32 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>贪吃蛇</title>
   <style>
-    :root { color-scheme: light dark; }
+    :root {
+      color-scheme: light dark;
+      --bg0: #070a10;
+      --bg1: #0b1320;
+      --card: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.12);
+      --text: #e8eef5;
+      --muted: rgba(232,238,245,.78);
+      --accent: #66e0ff;
+      --accent2: #66ffb2;
+      --food: #ffcc66;
+    }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
       display: grid;
       place-items: center;
       min-height: 100vh;
-      background: #0b0f14;
-      color: #e8eef5;
+      background:
+        radial-gradient(1200px 900px at 15% 10%, rgba(102,224,255,.14), transparent 55%),
+        radial-gradient(900px 700px at 90% 30%, rgba(102,255,178,.10), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      color: var(--text);
     }
     .wrap {
-      width: min(92vw, 520px);
+      width: min(92vw, 560px);
       padding: 16px;
       box-sizing: border-box;
     }
-    h1 { font-size: 18px; margin: 0 0 8px; font-weight: 650; }
-    .sub { font-size: 13px; opacity: .85; margin: 0 0 12px; line-height: 1.4; }
+    h1 { font-size: 18px; margin: 0 0 8px; font-weight: 750; letter-spacing: .2px; }
+    .sub { font-size: 13px; color: var(--muted); margin: 0 0 12px; line-height: 1.45; }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+
     canvas {
       width: 100%;
       height: auto;
-      background: #0f1620;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(15,22,32,1), rgba(10,14,22,1));
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
       touch-action: none;
       display: block;
     }
+
     .bar {
       display: flex;
       gap: 10px;
@@ -39,24 +63,30 @@
       margin-top: 10px;
       flex-wrap: wrap;
     }
+
     .pill {
       padding: 8px 10px;
       border: 1px solid rgba(255,255,255,.14);
       border-radius: 999px;
       font-size: 13px;
       background: rgba(255,255,255,.06);
+      backdrop-filter: blur(8px);
     }
+
     button {
       appearance: none;
       border: 1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.08);
+      background: rgba(255,255,255,.10);
       color: inherit;
       padding: 10px 12px;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 14px;
-      font-weight: 650;
+      font-weight: 750;
+      transition: transform .06s ease, background .12s ease;
     }
-    button:active { transform: translateY(1px); }
+    button:hover { background: rgba(255,255,255,.14); }
+    button:active { transform: translateY(1px) scale(.99); }
+
     .controls {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -64,9 +94,16 @@
       margin-top: 12px;
       user-select: none;
     }
-    .controls button { padding: 12px 0; }
+    .controls button {
+      padding: 14px 0;
+      font-size: 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.10);
+    }
     .controls .spacer { visibility: hidden; }
-    .footer { margin-top: 10px; font-size: 12px; opacity: .7; }
+
+    .footer { margin-top: 10px; font-size: 12px; color: rgba(232,238,245,.7); }
+
     .overlay {
       position: fixed;
       inset: 0;
@@ -80,8 +117,9 @@
       width: min(92vw, 420px);
       background: rgba(15,22,32,.95);
       border: 1px solid rgba(255,255,255,.14);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 14px;
+      box-shadow: 0 16px 48px rgba(0,0,0,.45);
     }
     .card h2 { margin: 0 0 8px; font-size: 16px; }
     .card p { margin: 0 0 12px; font-size: 13px; opacity: .9; line-height: 1.45; }
@@ -90,9 +128,11 @@
 <body>
   <div class="wrap">
     <h1>贪吃蛇</h1>
-    <p class="sub">手机：滑动改变方向 / 或用下面按钮。键盘：方向键或 WASD。点击「开始/暂停」。</p>
+    <p class="sub">手机：滑动改变方向（更灵敏）/ 或用下面按钮（支持按住连发）。键盘：方向键或 WASD。点击「开始/暂停」。</p>
 
-    <canvas id="c" width="420" height="420" aria-label="snake game"></canvas>
+    <div class="panel">
+      <canvas id="c" width="420" height="420" aria-label="snake game"></canvas>
+    </div>
 
     <div class="bar">
       <div class="pill">分数：<span id="score">0</span></div>
@@ -237,7 +277,7 @@
 
     // grid subtle
     ctx.save();
-    ctx.globalAlpha = 0.08;
+    ctx.globalAlpha = 0.07;
     ctx.strokeStyle = '#ffffff';
     for (let i=1;i<GRID;i++) {
       ctx.beginPath();
@@ -251,18 +291,26 @@
     }
     ctx.restore();
 
-    // food
+    // food (glow)
+    ctx.save();
+    ctx.shadowColor = 'rgba(255,204,102,.55)';
+    ctx.shadowBlur = 14;
     ctx.fillStyle = '#ffcc66';
-    roundRect(food.x*CELL+2, food.y*CELL+2, CELL-4, CELL-4, 8);
+    roundRect(food.x*CELL+2, food.y*CELL+2, CELL-4, CELL-4, 10);
     ctx.fill();
+    ctx.restore();
 
-    // snake
+    // snake (slight glow)
     for (let i=snake.length-1;i>=0;i--) {
       const s = snake[i];
       const isHead = i === 0;
+      ctx.save();
+      ctx.shadowBlur = isHead ? 16 : 10;
+      ctx.shadowColor = isHead ? 'rgba(102,224,255,.40)' : 'rgba(102,255,178,.28)';
       ctx.fillStyle = isHead ? '#66e0ff' : '#66ffb2';
-      roundRect(s.x*CELL+2, s.y*CELL+2, CELL-4, CELL-4, isHead ? 10 : 8);
+      roundRect(s.x*CELL+2, s.y*CELL+2, CELL-4, CELL-4, isHead ? 12 : 10);
       ctx.fill();
+      ctx.restore();
     }
 
     if (!running && !dead) {
@@ -329,39 +377,75 @@
   closeOverBtn.addEventListener('click', () => overlay.style.display = 'none');
 
   // touch swipe
+  // touch swipe (more responsive): track move, lower threshold, lock one direction per gesture
   let touchStart = null;
+  let touchLocked = false;
+  const SWIPE_THRESHOLD = 10;
+
   canvas.addEventListener('touchstart', (e) => {
     const t = e.touches[0];
-    touchStart = {x: t.clientX, y: t.clientY, t: Date.now()};
+    touchStart = {x: t.clientX, y: t.clientY};
+    touchLocked = false;
   }, {passive:true});
-  canvas.addEventListener('touchend', (e) => {
-    if (!touchStart) return;
-    const t = e.changedTouches[0];
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (!touchStart || touchLocked) return;
+    const t = e.touches[0];
     const dx = t.clientX - touchStart.x;
     const dy = t.clientY - touchStart.y;
     const adx = Math.abs(dx), ady = Math.abs(dy);
-    if (Math.max(adx, ady) < 18) {
-      // tap toggles
-      toggle();
-      touchStart = null;
-      return;
-    }
-    if (adx > ady) {
-      setDir(dx > 0 ? 1 : -1, 0);
-    } else {
-      setDir(0, dy > 0 ? 1 : -1);
-    }
+    if (Math.max(adx, ady) < SWIPE_THRESHOLD) return;
+
+    if (adx > ady) setDir(dx > 0 ? 1 : -1, 0);
+    else setDir(0, dy > 0 ? 1 : -1);
+
+    touchLocked = true;
+    // prevent page scroll
+    e.preventDefault();
+  }, {passive:false});
+
+  canvas.addEventListener('touchend', (e) => {
+    if (!touchStart) return;
+    // tap toggles
+    if (!touchLocked) toggle();
     touchStart = null;
+    touchLocked = false;
   }, {passive:true});
 
+  // on-screen buttons: support press-and-hold repeat
+  function bindHold(btn, fn) {
+    let timer = null;
+    let active = false;
+
+    const start = (e) => {
+      e.preventDefault?.();
+      if (active) return;
+      active = true;
+      fn();
+      timer = setInterval(fn, 70);
+    };
+
+    const end = () => {
+      active = false;
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', end);
+    btn.addEventListener('pointercancel', end);
+    btn.addEventListener('pointerleave', end);
+  }
+
   document.querySelectorAll('.controls button[data-dir]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const d = btn.getAttribute('data-dir');
+    const d = btn.getAttribute('data-dir');
+    const fn = () => {
       if (d === 'U') setDir(0,-1);
       if (d === 'D') setDir(0,1);
       if (d === 'L') setDir(-1,0);
       if (d === 'R') setDir(1,0);
-    });
+    };
+    bindHold(btn, fn);
   });
 
   reset();
