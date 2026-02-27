@@ -223,13 +223,28 @@
     }
   }
 
+  // allow one buffered turn per tick for snappier control
+  let turnQueued = false;
+  let queuedDir = null;
+
   function setDir(dx, dy) {
-    // prevent reverse
+    // prevent reverse against current direction
     if (dx === -dir.x && dy === -dir.y) return;
-    nextDir = {x: dx, y: dy};
+
+    // if already queued a turn this tick, keep the first queued
+    if (turnQueued) return;
+
+    // if player changes direction rapidly within a tick, buffer once
+    // (and also prevent immediate reverse against nextDir)
+    if (dx === -nextDir.x && dy === -nextDir.y) return;
+
+    queuedDir = {x: dx, y: dy};
+    turnQueued = true;
+    nextDir = queuedDir;
   }
 
   function step() {
+    // start of tick: consume queued turn (already reflected in nextDir)
     dir = nextDir;
     const head = snake[0];
     const newHead = {x: head.x + dir.x, y: head.y + dir.y};
@@ -246,6 +261,10 @@
     }
 
     snake.unshift(newHead);
+
+    // end of tick: allow a new buffered turn for next tick
+    turnQueued = false;
+    queuedDir = null;
 
     if (newHead.x === food.x && newHead.y === food.y) {
       score += 1;
